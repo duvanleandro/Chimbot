@@ -1,0 +1,14 @@
+# Token y configuración sensible
+.env
+token.txt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+env/
+
+# VSCode
+.vscode/
+.env
