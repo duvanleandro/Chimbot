@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from groq import Groq
 import asyncio
 
+import webserver
+
 load_dotenv()
 
 intents = discord.Intents.default()
@@ -692,7 +694,7 @@ async def on_message(message):
             
             user_id = usuario_mencionado.id
             
-            if tiempo_actual - menciones_contador[user_id]['last_reset'] > 60:
+            if tiempo_actual - menciones_contador[user_id]['last_reset'] > 5:
                 menciones_contador[user_id] = {'count': 0, 'last_reset': tiempo_actual}
             
             menciones_contador[user_id]['count'] += 1
@@ -804,4 +806,5 @@ async def on_command_error(ctx, error):
 
 # ==================== INICIAR BOT ====================
 
+webserver.keep_alive()
 bot.run(os.getenv('TOKEN'))
