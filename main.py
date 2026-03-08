@@ -115,7 +115,7 @@ USUARIOS_PERSONALIDADES = {
     },
     1228748314640646297: {
         "nombre": "enrique",
-        "apodos": ["DVD", "night", "zzz"]
+        "apodos": ["DVD", "night", "zzz"],
         "caracteristicas": ["spamero", "negro", "autista", "da cringe"]
     },
     1130938300090286130: {
