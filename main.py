@@ -973,5 +973,5 @@ async def on_command_error(ctx, error):
 
 # ==================== INICIAR BOT ====================
 
-webserver.keep_alive()
+webserver.keep_alive(bot)
 bot.run(os.getenv('TOKEN'))

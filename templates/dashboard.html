@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChimBot Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 ChimBot Dashboard</h1>
+            <div class="user-info">
+                <span id="bot-status" class="status-online">● Online</span>
+                <span>Zorcuz</span>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="sidebar">
+                <div class="section">
+                    <h3>📊 Estadísticas</h3>
+                    <div class="stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Servidores:</span>
+                            <span id="stat-servidores" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Canales:</span>
+                            <span id="stat-canales" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Usuarios:</span>
+                            <span id="stat-usuarios" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Latencia:</span>
+                            <span id="stat-latencia" class="stat-value">0ms</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-area">
+                <div class="controls">
+                    <div class="control-group">
+                        <label for="servidor-select">Servidor:</label>
+                        <select id="servidor-select">
+                            <option value="">Cargando...</option>
+                        </select>
+                    </div>
+
+                    <div class="control-group">
+                        <label for="canal-select">Canal:</label>
+                        <select id="canal-select">
+                            <option value="">Selecciona un servidor primero</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Sección de mensajes recientes -->
+                <div class="messages-section" id="messages-section" style="display: none;">
+                    <h3>💬 Últimos 10 mensajes</h3>
+                    <div id="messages-container">
+                        <div class="loading-messages">Selecciona un canal para ver mensajes</div>
+                    </div>
+                </div>
+
+                <div class="message-box">
+                    <label for="mensaje-input">Mensaje:</label>
+                    <textarea id="mensaje-input" placeholder="Escribe tu mensaje aquí..." rows="5"></textarea>
+                    
+                    <div class="mention-controls">
+                        <label for="usuario-select">Mencionar usuario:</label>
+                        <div class="mention-group">
+                            <select id="usuario-select">
+                                <option value="">Selecciona un usuario</option>
+                            </select>
+                            <button onclick="agregarMencion()" class="btn-secondary">+ Agregar</button>
+                        </div>
+                    </div>
+
+                    <button onclick="enviarMensaje()" class="btn-primary">Enviar Mensaje</button>
+                    <div id="mensaje-status" class="status-message"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let servidorActual = null;
+        let intervalMensajes = null;
+        let canalActual = null;
+
+        // Cargar servidores al iniciar
+        async function cargarServidores() {
+            try {
+                const response = await fetch('/api/servidores');
+                const servidores = await response.json();
+                
+                const select = document.getElementById('servidor-select');
+                select.innerHTML = '<option value="">Selecciona un servidor</option>';
+                
+                servidores.forEach(servidor => {
+                    const option = document.createElement('option');
+                    option.value = servidor.id;
+                    option.textContent = `${servidor.nombre} (${servidor.miembros} miembros)`;
+                    select.appendChild(option);
+                });
+            } catch (error) {
+                console.error('Error cargando servidores:', error);
+            }
+        }
+
+// Cargar canales cuando se selecciona un servidor
+document.getElementById('servidor-select').addEventListener('change', async (e) => {
+    const servidorId = e.target.value;
+    servidorActual = servidorId;
+    
+    if (!servidorId) {
+        document.getElementById('canal-select').innerHTML = '<option value="">Selecciona un servidor primero</option>';
+        document.getElementById('usuario-select').innerHTML = '<option value="">Selecciona un usuario</option>';
+        return;
+    }
+
+    // Cargar canales
+    try {
+        const response = await fetch(`/api/canales/${servidorId}`);
+        
+        // ← AGREGADO: Verificar si la respuesta es OK
+        if (!response.ok) {
+            console.error('Error en API canales:', response.status);
+            document.getElementById('canal-select').innerHTML = '<option value="">Error cargando canales</option>';
+            return;
+        }
+        
+        const canales = await response.json();
+        
+        // ← AGREGADO: Verificar que sea un array
+        if (!Array.isArray(canales)) {
+            console.error('Respuesta de canales no es un array:', canales);
+            document.getElementById('canal-select').innerHTML = '<option value="">Error cargando canales</option>';
+            return;
+        }
+        
+        const select = document.getElementById('canal-select');
+        select.innerHTML = '<option value="">Selecciona un canal</option>';
+        
+        let categoriaActual = null;
+        canales.forEach(canal => {
+            if (canal.categoria !== categoriaActual) {
+                categoriaActual = canal.categoria;
+                const optgroup = document.createElement('optgroup');
+                optgroup.label = categoriaActual;
+                select.appendChild(optgroup);
+            }
+            
+            const option = document.createElement('option');
+            option.value = canal.id;
+            option.textContent = `# ${canal.nombre}`;
+            select.lastElementChild.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Error cargando canales:', error);
+        document.getElementById('canal-select').innerHTML = '<option value="">Error cargando canales</option>';
+    }
+
+// Cargar usuarios
+    try {
+        const response = await fetch(`/api/usuarios/${servidorId}`);
+        
+        if (!response.ok) {
+            console.error('Error en API usuarios:', response.status);
+            document.getElementById('usuario-select').innerHTML = '<option value="">Error cargando usuarios</option>';
+            return;
+        }
+        
+        const usuarios = await response.json();
+        
+        if (!Array.isArray(usuarios)) {
+            console.error('Respuesta de usuarios no es un array:', usuarios);
+            document.getElementById('usuario-select').innerHTML = '<option value="">Error cargando usuarios</option>';
+            return;
+        }
+        
+        const select = document.getElementById('usuario-select');
+        select.innerHTML = '<option value="">Selecciona un usuario</option>';
+        
+        // ← AGREGAR OPCIONES ESPECIALES
+        const optgroupEspecial = document.createElement('optgroup');
+        optgroupEspecial.label = '📢 Menciones especiales';
+        
+        const optionEveryone = document.createElement('option');
+        optionEveryone.value = '@everyone';
+        optionEveryone.textContent = '@everyone (menciona a todos)';
+        optgroupEspecial.appendChild(optionEveryone);
+        
+        const optionHere = document.createElement('option');
+        optionHere.value = '@here';
+        optionHere.textContent = '@here (menciona a los conectados)';
+        optgroupEspecial.appendChild(optionHere);
+        
+        select.appendChild(optgroupEspecial);
+        
+        // ← AGREGAR USUARIOS NORMALES
+        const optgroupUsuarios = document.createElement('optgroup');
+        optgroupUsuarios.label = '👤 Usuarios';
+        
+        usuarios.forEach(usuario => {
+            const option = document.createElement('option');
+            option.value = usuario.id;
+            option.textContent = usuario.display_name;
+            optgroupUsuarios.appendChild(option);
+        });
+        
+        select.appendChild(optgroupUsuarios);
+        
+    } catch (error) {
+        console.error('Error cargando usuarios:', error);
+        document.getElementById('usuario-select').innerHTML = '<option value="">Error cargando usuarios</option>';
+    }
+});
+
+// Cargar mensajes cuando se selecciona un canal
+document.getElementById('canal-select').addEventListener('change', async (e) => {
+    const canalId = e.target.value;
+    
+    // Detener intervalo anterior si existe
+    if (intervalMensajes) {
+        clearInterval(intervalMensajes);
+        intervalMensajes = null;
+    }
+    
+    // Cargar mensajes iniciales
+    await cargarMensajes(canalId);
+    
+    // Iniciar auto-actualización cada 5 segundos
+    if (canalId) {
+        intervalMensajes = setInterval(() => {
+            cargarMensajes(canalId, true);  // true = silencioso (no mostrar "Cargando...")
+        }, 5000);
+    }
+});
+
+        // Agregar mención al mensaje
+        function agregarMencion() {
+            const usuarioSelect = document.getElementById('usuario-select');
+            const mensajeInput = document.getElementById('mensaje-input');
+            
+            if (!usuarioSelect.value) {
+                mostrarEstado('Selecciona un usuario primero', 'error');
+                return;
+            }
+
+            const usuarioId = usuarioSelect.value;
+            const mencion = `<@${usuarioId}>`;
+            
+            mensajeInput.value += (mensajeInput.value ? ' ' : '') + mencion;
+            mostrarEstado('Mención agregada', 'success');
+        }
+
+        // Enviar mensaje
+        async function enviarMensaje() {
+            const canalId = document.getElementById('canal-select').value;
+            const mensaje = document.getElementById('mensaje-input').value;
+
+            if (!canalId) {
+                mostrarEstado('Selecciona un canal', 'error');
+                return;
+            }
+
+            if (!mensaje.trim()) {
+                mostrarEstado('Escribe un mensaje', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/enviar', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        canal_id: canalId,
+                        mensaje: mensaje
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    mostrarEstado('✅ Mensaje enviado correctamente', 'success');
+                    document.getElementById('mensaje-input').value = '';
+
+                     if (canalActual) {
+        await cargarMensajes(canalActual, true);
+    }
+                } else {
+                    mostrarEstado(`❌ Error: ${result.error}`, 'error');
+                }
+            } catch (error) {
+                mostrarEstado(`❌ Error de conexión: ${error}`, 'error');
+            }
+        }
+
+        // Mostrar estado del mensaje
+        function mostrarEstado(mensaje, tipo) {
+            const statusDiv = document.getElementById('mensaje-status');
+            statusDiv.textContent = mensaje;
+            statusDiv.className = `status-message ${tipo}`;
+            
+            setTimeout(() => {
+                statusDiv.textContent = '';
+                statusDiv.className = 'status-message';
+            }, 3000);
+        }
+
+        // Cargar estadísticas
+        async function cargarEstadisticas() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                
+                document.getElementById('stat-servidores').textContent = stats.servidores;
+                document.getElementById('stat-canales').textContent = stats.canales;
+                document.getElementById('stat-usuarios').textContent = stats.usuarios;
+                document.getElementById('stat-latencia').textContent = `${stats.latencia}ms`;
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+            }
+        }
+
+        // Cargar mensajes de un canal
+       // Cargar mensajes de un canal
+async function cargarMensajes(canalId, silencioso = false) {
+    const messagesSection = document.getElementById('messages-section');
+    const messagesContainer = document.getElementById('messages-container');
+    
+    if (!canalId) {
+        messagesSection.style.display = 'none';
+        canalActual = null;
+        
+        // Detener auto-actualización
+        if (intervalMensajes) {
+            clearInterval(intervalMensajes);
+            intervalMensajes = null;
+        }
+        return;
+    }
+
+    canalActual = canalId;
+    messagesSection.style.display = 'block';
+    
+    // Solo mostrar "Cargando..." la primera vez
+    if (!silencioso) {
+        messagesContainer.innerHTML = '<div class="loading-messages">Cargando mensajes...</div>';
+    }
+
+    try {
+        const response = await fetch(`/api/mensajes/${canalId}`);
+        
+        if (!response.ok) {
+            messagesContainer.innerHTML = '<div class="no-messages">Error cargando mensajes</div>';
+            return;
+        }
+        
+        const mensajes = await response.json();
+        
+        if (!Array.isArray(mensajes) || mensajes.length === 0) {
+            messagesContainer.innerHTML = '<div class="no-messages">No hay mensajes en este canal</div>';
+            return;
+        }
+
+        // Guardar posición del scroll
+        const scrollAlFinal = messagesContainer.scrollHeight - messagesContainer.scrollTop <= messagesContainer.clientHeight + 50;
+
+        messagesContainer.innerHTML = '';
+        
+        mensajes.forEach(mensaje => {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message-item';
+            
+            // Avatar
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = 'message-avatar';
+            
+            if (mensaje.autor_avatar) {
+                const avatarImg = document.createElement('img');
+                avatarImg.src = mensaje.autor_avatar;
+                avatarImg.alt = mensaje.autor;
+                avatarDiv.appendChild(avatarImg);
+            } else {
+                avatarDiv.textContent = mensaje.autor.charAt(0).toUpperCase();
+            }
+            
+            // Contenido
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'message-content-wrapper';
+            
+            // Header (autor + timestamp)
+            const headerDiv = document.createElement('div');
+            headerDiv.className = 'message-header';
+            
+            const authorSpan = document.createElement('span');
+            authorSpan.className = 'message-author';
+            authorSpan.textContent = mensaje.autor;
+            
+            const timestampSpan = document.createElement('span');
+            timestampSpan.className = 'message-timestamp';
+            const date = new Date(mensaje.timestamp);
+            timestampSpan.textContent = date.toLocaleString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            
+            headerDiv.appendChild(authorSpan);
+            headerDiv.appendChild(timestampSpan);
+            
+            // Texto del mensaje
+            const textDiv = document.createElement('div');
+            textDiv.className = 'message-text';
+            textDiv.textContent = mensaje.contenido || '(mensaje sin texto)';
+            
+            contentWrapper.appendChild(headerDiv);
+            contentWrapper.appendChild(textDiv);
+            
+            // Adjuntos (imágenes)
+            if (mensaje.adjuntos && mensaje.adjuntos.length > 0) {
+                mensaje.adjuntos.forEach(url => {
+                    const attachmentDiv = document.createElement('div');
+                    attachmentDiv.className = 'message-attachment';
+                    
+                    if (url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
+                        const img = document.createElement('img');
+                        img.src = url;
+                        img.alt = 'Imagen adjunta';
+                        attachmentDiv.appendChild(img);
+                    }
+                    
+                    contentWrapper.appendChild(attachmentDiv);
+                });
+            }
+            
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentWrapper);
+            messagesContainer.appendChild(messageDiv);
+        });
+        
+        // Scroll al final solo si estaba al final antes
+        if (scrollAlFinal || !silencioso) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+        
+    } catch (error) {
+        console.error('Error cargando mensajes:', error);
+        if (!silencioso) {
+            messagesContainer.innerHTML = '<div class="no-messages">Error cargando mensajes</div>';
+        }
+    }
+}
+        // Inicializar dashboard
+        window.onload = () => {
+            cargarServidores();
+            cargarEstadisticas();
+            
+            // Actualizar estadísticas cada 30 segundos
+            setInterval(cargarEstadisticas, 30000);
+        };
+
+        // Permitir Enter para enviar (Ctrl+Enter para nueva línea)
+        document.getElementById('mensaje-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.ctrlKey) {
+                e.preventDefault();
+                enviarMensaje();
+            }
+        });
+    </script>
+</body>
+</html>
