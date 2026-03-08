@@ -7,6 +7,7 @@ import random
 from datetime import datetime, timedelta
 from groq import Groq
 import asyncio
+import requests
 
 import webserver
 
@@ -46,7 +47,7 @@ USUARIOS_PERSONALIDADES = {
     829898888340439041: {
         "nombre": "Diego",
         "apodos": ["bodriego", "masturvatetas"],
-        "caracteristicas": ["niña depresiva", "es un maricon de mierda", "tacaño", "mala paga", "deudor", "pobre", "flojo de mierda", "no busca trabajo ni porque lo amenacen", "vago sin sueldo"]
+        "caracteristicas": ["es un maricon de mierda", "Es un perdedor sin vida sexual", "edgy de mierda", "no tiene internet", "tacaño", "mala paga", "deudor", "pobre", "flojo de mierda", "no busca trabajo ni porque lo amenacen", "vago sin sueldo"]
     },
     751481025544061111: {
         "nombre": "Oscar",
@@ -55,7 +56,7 @@ USUARIOS_PERSONALIDADES = {
     },
     1279194969764139062: {
         "nombre": "Gabriela",
-        "apodos": ["gustaymas", "gamierda", "basuriela"],
+        "apodos": ["gustaymas", "gamierda", "basuriela", "yamegustamasturbar"],
         "caracteristicas": ["mujer sin derechos", "autista maltratadita"]
     },
     402841608992587776: {
@@ -151,6 +152,17 @@ def obtener_info_usuario(user_id):
         info = USUARIOS_PERSONALIDADES[user_id]
         return f"Usuario: {info['nombre']} (apodos: {', '.join(info['apodos'])}). Características: {', '.join(info['caracteristicas'])}"
     return None
+
+async def obtener_roles_usuario(member):
+    """Obtiene los roles relevantes del usuario"""
+    if not member:
+        return []
+
+    roles_relevantes = []
+    for rol in member.roles:
+        if rol.name.lower() in ['Veneco']:
+            roles_relevantes.append(rol.name)
+    return roles_relevantes
 
 # Sistema de prompt para personalidad del bot
 
@@ -258,6 +270,9 @@ CANAL_SPAM_ID = 1004171793101230151
 # ID del canal de bienvenida/despedida
 CANAL_BIENVENIDA_ID = 1004156875035656303
 
+# ID del canal de memes
+CANANL_MEMES_ID = 1457786102181265675
+
 # ID de Zorcuz (el creador del bot)
 ZORCUZ_ID = 708005339282276392
 
@@ -298,6 +313,7 @@ respuestas = {
             '`$help personas` - Muestra un mensaje para algunos usuarios especificos',
             '`$testspam` - Envía un mensaje de prueba al canal de spam',
             '`$statusspam` - Ver estado del sistema de spam',
+            '`$meme` - Envía un meme random de subreddits en español',
         ],
         'admin': [
             '`$borrar <cantidad>` - Borra mensajes del canal (1-100)',
@@ -369,15 +385,24 @@ async def silenciar_usuario(member, duracion_segundos=10):
 
 # ==================== FUNCIONES DE IA (GROQ) ====================
 
-async def obtener_respuesta_gemini(prompt, contexto="", user_id=None):
+async def obtener_respuesta_gemini(prompt, contexto="", user_id=None, member = None):
     """Obtiene una respuesta de Groq con contexto del chat"""
     try:
         # Obtener info del usuario si existe
         info_usuario = obtener_info_usuario(user_id) if user_id else None
+
+        # Obtener roles del usuario si es posible
+        roles = await obtener_roles_usuario(member) if member else []
         
         # Agregar info del usuario al contexto si existe
         if info_usuario:
             contexto += f"\n\nINFO DEL USUARIO QUE HABLA: {info_usuario}"
+
+        # Agregar roles del usuario al contexto si existen
+        if roles:
+            contexto += f"\nROLES: {', '.join(roles)}"
+            if "veneco" in [r.lower() for r in roles]:
+                contexto += "\nIMPORTANTE: Este usuario es 'veneco' o venezolano, puedes insultarlo diciendo 'veneco'"
         
         mensaje_completo = f"{contexto}\n\n{prompt}"
         
@@ -426,6 +451,39 @@ async def procesar_respuesta(respuesta):
         mensajes.append(mensaje_actual.strip())
     
     return [m for m in mensajes if m]
+
+# ==================== FUNCIÓN PARA OBTENER MEMES ====================
+
+async def obtener_meme_shitpost():
+    """Obtiene un meme random de subreddits en español"""
+    subreddits = ['MAAU', 'DylanteroYT', 'orslokx', 'yo_elvr']
+    subreddit = random.choice(subreddits)
+    
+    try:
+        url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=50"
+        headers = {'User-Agent': 'ChimBot/1.0'}
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        data = response.json()
+        
+        # Filtrar solo posts con imágenes
+        memes = []
+        for post in data['data']['children']:
+            post_data = post['data']
+            if post_data.get('url') and any(ext in post_data['url'] for ext in ['.jpg', '.png', '.gif', '.jpeg']):
+                memes.append({
+                    'url': post_data['url'],
+                    'title': post_data['title']
+                })
+        
+        if memes:
+            meme = random.choice(memes)
+            return meme['url'], meme['title']
+        return None, None
+    
+    except Exception as e:
+        print(f"[ERROR MEME] {e}")
+        return None, None
 
 # ==================== FUNCIONES PARA COMANDOS POR IA ====================
 
@@ -711,6 +769,32 @@ async def ver_permisos(ctx):
     
     await ctx.send(mensaje)
 
+@bot.command(name='meme')
+async def enviar_meme(ctx):
+    """Comando para enviar meme random de subreddits en español"""
+    #verificar si esta en el canal de memes
+    if ctx.channel.id != CANANL_MEMES_ID:
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            pass
+        # enviar mensaje de error
+        await ctx.send(f"{ctx.author.mention} Este comando solo se puede usar en <#{CANANL_MEMES_ID}>", delete_after=5)
+        return
+    
+    #si esta en el canal correcto, enviar el meme
+    async with ctx.typing():
+        url, titulo = await obtener_meme_shitpost()
+        if url:
+            embed = discord.Embed(title=titulo if len(titulo) < 256 else titulo[:253] + "...", color=discord.Color.random())
+            embed.set_image(url=url)
+            embed.set_footer(text="Meme rancio del reddit")
+            await ctx.send(embed=embed)
+        else:
+            await ctx.send("Ombe, no se pudo conseguir un meme, que jartera tan triple hijueputa")
+
+
+
 # Comandos de personas
 def crear_comando_persona(nombre):
     async def comando(ctx):
@@ -809,7 +893,8 @@ async def on_message(message):
             respuesta = await obtener_respuesta_gemini(
                 texto_limpio,
                 f"Alguien te mencionó en Discord",
-                user_id=message.author.id
+                user_id=message.author.id,
+                member=message.author
             )
             
             if respuesta:
@@ -821,13 +906,15 @@ async def on_message(message):
                         # Si falla el reply, enviar mensaje normal
                         await message.channel.send(msg)
                 print(f"[IA] Respuesta a mención de {message.author.name}")
+
     
     elif await debe_responder() and not message.author.bot and message.channel.id != CANAL_SPAM_ID:
         async with message.channel.typing():
             respuesta = await obtener_respuesta_gemini(
                 message.content,
                 f"{message.author.name} está hablando en el chat",
-                user_id=message.author.id
+                user_id=message.author.id,
+                member=message.author
             )
             
             if respuesta and len(respuesta) > 10:
