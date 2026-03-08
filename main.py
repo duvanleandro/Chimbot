@@ -141,7 +141,7 @@ INSULTOS_GRUPO = [
     "marica", "gay", "maricón", "homosexual", "basura", 
     "tu eres mujer no tienes derechos",
     "misoginia", "mierda", "estúpido", "veneco",
-    "perra", "hijueputa", "perro hijueputa", "pedofilo", "negro", "negro hijueputa", "mamador de penes", "chupacascaras", "lavaculo"|
+    "perra", "hijueputa", "perro hijueputa", "pedofilo", "negro", "negro hijueputa", "mamador de penes", "chupacascaras", "lavaculo"
 ]
 
 # Función para obtener info del usuario
