@@ -12,3 +12,5 @@ env/
 # VSCode
 .vscode/
 .env
+memes_cache.json
+copypastas_cache.json

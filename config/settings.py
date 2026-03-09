@@ -37,6 +37,7 @@ RESPUESTAS = {
             '`$testspam` - Envía un mensaje de prueba al canal de spam',
             '`$statusspam` - Ver estado del sistema de spam',
             '`$meme` - Envía un meme random de subreddits en español',
+            '`$historia` - Envía una historia random de subreddits en español',
         ],
         'admin': [
             '`$borrar <cantidad>` - Borra mensajes del canal (1-100)',
@@ -59,6 +60,7 @@ RESPUESTAS = {
         'motta': 'pendiente por poner',
         'diego': 'diego = dIEGo = d IEG o = o GEI d = GEI = Diego es igual a un jodido maricon',
         'cardenas': 'Por detras me difaman por delante me la maman',
-        'johan': 'me encanta que me den por el culo asi asi bien rico bien asi'
+        'johan': 'me encanta que me den por el culo asi asi bien rico bien asi',
+        'keyner': 'keyner es un hijueputa perro hijueputa de mierda que se la mama a su padre y a su madre y a su hermana y a su hermano y a su perro y a su gato y a su pez y a su tortuga y a su hamster y a su conejo y a su iguana y a su serpiente y a su lagarto y a su camaleon y a su rana y a su sapo y a su culebra y a su boa constrictor y a su anaconda y a su piton y a su cobra y a su mamba negra y a su viperina y a su cascabel y a su coralillo y a su coralillo de agua dulce',
     }
 }

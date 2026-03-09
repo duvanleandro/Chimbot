@@ -7,7 +7,7 @@ from config import (
     RESPUESTAS, CANAL_SPAM_ID, CANAL_MEMES_ID, ZORCUZ_ID,
     mensajes_random, obtener_mensaje_sin_repetir
 )
-from utils import obtener_meme_shitpost
+from utils import obtener_meme_shitpost, obtener_copypasta
 
 
 def setup_commands(bot):
@@ -149,29 +149,116 @@ Canal: <#{CANAL_SPAM_ID}>"""
         """Comando para enviar meme random de subreddits en español"""
         # Verificar si está en el canal de memes
         if ctx.channel.id != CANAL_MEMES_ID:
+            await ctx.send(
+                f"{ctx.author.mention} ombe gonorrea, usa ese comando en <#{CANAL_MEMES_ID}>",
+                delete_after=8
+            )
+            
             try:
                 await ctx.message.delete()
             except discord.Forbidden:
                 pass
-            await ctx.send(
-                f"{ctx.author.mention} Este comando solo se puede usar en <#{CANAL_MEMES_ID}>",
-                delete_after=5
-            )
+            
             return
         
         # Si está en el canal correcto, enviar el meme
         async with ctx.typing():
-            url, titulo = await obtener_meme_shitpost()
+            url, titulo, tipo = await obtener_meme_shitpost()
+            
             if url:
-                embed = discord.Embed(
-                    title=titulo if len(titulo) < 256 else titulo[:253] + "...",
-                    color=discord.Color.random()
-                )
-                embed.set_image(url=url)
-                embed.set_footer(text="Meme rancio del reddit")
-                await ctx.send(embed=embed)
+                if tipo == 'image':
+                    # Para imágenes: usar embed
+                    embed = discord.Embed(
+                        title=titulo if len(titulo) < 256 else titulo[:253] + "...",
+                        color=discord.Color.random()
+                    )
+                    embed.set_image(url=url)
+                    embed.set_footer(text="Meme rancio del reddit 🔥")
+                    await ctx.send(embed=embed)
+                    
+                elif tipo in ['reddit_video', 'video', 'external_video']:
+                    # Para videos: enviar el título como mensaje normal y el video debajo
+                    titulo_corto = titulo if len(titulo) < 200 else titulo[:197] + "..."
+                    await ctx.send(f"**{titulo_corto}**\n{url}")
+                else:
+                    # Fallback: enviar URL directamente
+                    await ctx.send(url)
             else:
-                await ctx.send("Ombe, no se pudo conseguir un meme, que jartera tan triple hijueputa")
+                await ctx.send("Ombe, no se pudo conseguir un meme nuevo, todos ya los he enviado. Espera un rato gonorrea")
+        
+    @bot.command(name='historia')
+    async def enviar_historia(ctx):
+        """Comando para enviar copypasta random de r/copypasta_es"""
+        from config import CANAL_MEMES_ID
+        import asyncio
+        
+        # Verificar si está en el canal correcto
+        if ctx.channel.id != CANAL_MEMES_ID:
+            await ctx.send(
+                f"{ctx.author.mention} ombe, usa ese comando en <#{CANAL_MEMES_ID}>",
+                delete_after=8
+            )
+            
+            try:
+                await ctx.message.delete()
+            except discord.Forbidden:
+                pass
+            
+            return
+        
+        # Si está en el canal correcto, enviar el copypasta
+        async with ctx.typing():
+            try:
+                titulo, texto, url = await obtener_copypasta()
+                
+                if titulo and texto:
+                    # Dividir el copypasta si es muy largo (Discord límite: 2000 caracteres)
+                    header = f"**📖 {titulo}**\n\n"
+                    
+                    # Si el texto completo cabe en un mensaje
+                    if len(header + texto) <= 1900:
+                        await ctx.send(f"{header}{texto}\n\n*Fuente: <{url}>*")
+                    else:
+                        # Enviar el título primero
+                        await ctx.send(header)
+                        
+                        # Dividir el texto en chunks de ~1900 caracteres
+                        chunks = []
+                        texto_restante = texto
+                        
+                        while len(texto_restante) > 0:
+                            if len(texto_restante) <= 1900:
+                                chunks.append(texto_restante)
+                                break
+                            
+                            # Buscar un punto o salto de línea cerca del límite
+                            corte = texto_restante[:1900].rfind('\n')
+                            if corte == -1:
+                                corte = texto_restante[:1900].rfind('. ')
+                            if corte == -1:
+                                corte = 1900
+                            
+                            chunks.append(texto_restante[:corte])
+                            texto_restante = texto_restante[corte:].strip()
+                        
+                        # Enviar cada chunk
+                        for i, chunk in enumerate(chunks):
+                            if i == len(chunks) - 1:
+                                # Último chunk: agregar fuente
+                                await ctx.send(f"{chunk}\n\n*Fuente: <{url}>*")
+                            else:
+                                await ctx.send(chunk)
+                            
+                            # Pequeña pausa entre mensajes
+                            await asyncio.sleep(0.5)
+                else:
+                    await ctx.send("Ombe, no se pudo conseguir una historia nueva, todas ya las he enviado. Espera un rato gonorrea")
+            
+            except Exception as e:
+                print(f"[ERROR EN COMANDO HISTORIA] {e}")
+                import traceback
+                traceback.print_exc()
+                await ctx.send("Ombe parce, hubo un error consiguiendo la historia. Intenta de nuevo gonorrea")
 
     # Comandos de personas
     def crear_comando_persona(nombre):
