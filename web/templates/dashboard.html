@@ -7,475 +7,811 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <div class="container">
-        <header>
-            <h1>🤖 ChimBot Dashboard</h1>
-            <div class="user-info">
-                <span id="bot-status" class="status-online">● Online</span>
-                <span>Zorcuz</span>
+    <div class="dashboard-wrapper">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h1>🤖 ChimBot</h1>
             </div>
-        </header>
-
-        <div class="main-content">
-            <div class="sidebar">
-                <div class="section">
-                    <h3>📊 Estadísticas</h3>
-                    <div class="stats">
-                        <div class="stat-item">
-                            <span class="stat-label">Servidores:</span>
-                            <span id="stat-servidores" class="stat-value">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Canales:</span>
-                            <span id="stat-canales" class="stat-value">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Usuarios:</span>
-                            <span id="stat-usuarios" class="stat-value">0</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-label">Latencia:</span>
-                            <span id="stat-latencia" class="stat-value">0ms</span>
-                        </div>
-                    </div>
+            <nav class="sidebar-nav">
+                <div class="nav-item active" onclick="showPage('servers')">
+                    <span class="nav-icon">🏠</span>
+                    <span>Servidores</span>
                 </div>
-            </div>
-
-            <div class="chat-area">
-                <div class="controls">
-                    <div class="control-group">
-                        <label for="servidor-select">Servidor:</label>
-                        <select id="servidor-select">
-                            <option value="">Cargando...</option>
-                        </select>
-                    </div>
-
-                    <div class="control-group">
-                        <label for="canal-select">Canal:</label>
-                        <select id="canal-select">
-                            <option value="">Selecciona un servidor primero</option>
-                        </select>
-                    </div>
+                <div class="nav-item" onclick="showPage('stats')">
+                    <span class="nav-icon">📊</span>
+                    <span>Estadísticas</span>
                 </div>
-                <!-- Sección de mensajes recientes -->
-                <div class="messages-section" id="messages-section" style="display: none;">
-                    <h3>💬 Últimos 10 mensajes</h3>
-                    <div id="messages-container">
-                        <div class="loading-messages">Selecciona un canal para ver mensajes</div>
-                    </div>
-                </div>
+            </nav>
+        </aside>
 
-                <div class="message-box">
-                    <label for="mensaje-input">Mensaje:</label>
-                    <textarea id="mensaje-input" placeholder="Escribe tu mensaje aquí..." rows="5"></textarea>
-                    
-                    <div class="mention-controls">
-                        <label for="usuario-select">Mencionar usuario:</label>
-                        <div class="mention-group">
-                            <select id="usuario-select">
-                                <option value="">Selecciona un usuario</option>
-                            </select>
-                            <button onclick="agregarMencion()" class="btn-secondary">+ Agregar</button>
-                        </div>
+        <!-- Contenido Principal -->
+        <main class="main-content">
+            <!-- Página: Selección de Servidores -->
+            <div id="page-servers" class="page active">
+                <div class="server-selection">
+                    <div class="page-header">
+                        <h2>Selecciona un Servidor</h2>
+                        <p>Elige el servidor donde quieres administrar ChimBot</p>
                     </div>
-
-                    <button onclick="enviarMensaje()" class="btn-primary">Enviar Mensaje</button>
-                    <div id="mensaje-status" class="status-message"></div>
+                    <div id="servers-grid" class="servers-grid">
+                        <p style="text-align: center; color: var(--text-secondary);">Cargando servidores...</p>
+                    </div>
                 </div>
             </div>
-        </div>
+
+            <!-- Página: Dashboard del Servidor -->
+            <div id="page-server-dashboard" class="page">
+                <div class="server-dashboard">
+                    <!-- Header del servidor -->
+                    <div class="dashboard-header">
+                        <div class="server-header-info">
+                            <div class="server-header-icon" id="server-header-icon">
+                                🏠
+                            </div>
+                            <div class="server-header-text">
+                                <h2 id="server-header-name">Servidor</h2>
+                                <p id="server-header-members">0 miembros</p>
+                            </div>
+                        </div>
+                        <button class="btn-back" onclick="backToServers()">← Volver</button>
+                    </div>
+
+                    <!-- Pestañas internas -->
+                    <div class="dashboard-tabs">
+                        <button class="tab-btn-internal active" onclick="showDashboardTab('music')">
+                            🎵 Música
+                        </button>
+                        <button class="tab-btn-internal" onclick="showDashboardTab('messages')">
+                            💬 Mensajes
+                        </button>
+                    </div>
+
+                    <!-- Contenido: Música -->
+                    <div id="dashboard-music" class="dashboard-content active">
+                        <!-- Formulario para agregar canciones -->
+                        <div class="music-panel" style="margin-bottom: 25px;">
+                            <h3 style="margin-bottom: 15px;">🎵 Agregar Música</h3>
+                            <div style="display: flex; gap: 10px;">
+                                <input 
+                                    type="text" 
+                                    id="music-search-input" 
+                                    placeholder="Buscar canción o pegar URL de YouTube..."
+                                    style="flex: 1; padding: 15px; background: var(--bg-tertiary); color: var(--text-primary); border: 2px solid var(--bg-tertiary); border-radius: 8px; font-size: 15px;"
+                                    onkeypress="if(event.key === 'Enter') addSong()"
+                                >
+                                <button class="control-btn success" onclick="addSong()" style="min-width: 150px;">
+                                    ➕ Agregar
+                                </button>
+                            </div>
+                            <p style="color: var(--text-secondary); font-size: 13px; margin-top: 10px;">
+                                💡 Puedes buscar por nombre o pegar un enlace directo de YouTube
+                            </p>
+                        </div>
+
+                        <div id="music-panel-container"></div>
+                    </div>
+
+                    <!-- Contenido: Mensajes -->
+                    <div id="dashboard-messages" class="dashboard-content">
+                        <div class="messages-section">
+                            <div class="channel-selector">
+                                <h3>Seleccionar Canal</h3>
+                                <select id="channel-select" class="channel-select" onchange="loadMessages()">
+                                    <option value="">-- Selecciona un canal --</option>
+                                </select>
+                            </div>
+
+                            <div id="messages-container" class="messages-container">
+                                <p style="text-align: center; color: var(--text-secondary);">
+                                    Selecciona un canal para ver mensajes
+                                </p>
+                            </div>
+
+                            <div class="message-input-section">
+                                <textarea 
+                                    id="message-input" 
+                                    class="message-input" 
+                                    placeholder="Escribe tu mensaje aquí..."
+                                ></textarea>
+                                <button class="btn-send" onclick="sendMessage()">
+                                    Enviar Mensaje
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Página: Estadísticas -->
+            <div id="page-stats" class="page">
+                <div class="server-selection">
+                    <div class="page-header">
+                        <h2>Estadísticas Globales</h2>
+                        <p>Información general sobre ChimBot</p>
+                    </div>
+                    <div id="stats-container" class="stats-grid">
+                        <p style="text-align: center; color: var(--text-secondary);">Cargando estadísticas...</p>
+                    </div>
+                </div>
+            </div>
+        </main>
     </div>
 
     <script>
-        let servidorActual = null;
-        let intervalMensajes = null;
-        let canalActual = null;
+        // ========================================
+        // VARIABLES GLOBALES
+        // ========================================
+        let currentServerId = null;
+        let currentServerData = null;
+        let currentChannelId = null;
+        let musicUpdateInterval = null;
+        let messagesUpdateInterval = null;
 
-        // Cargar servidores al iniciar
-        async function cargarServidores() {
-            try {
-                const response = await fetch('/api/servidores');
-                const servidores = await response.json();
-                
-                const select = document.getElementById('servidor-select');
-                select.innerHTML = '<option value="">Selecciona un servidor</option>';
-                
-                servidores.forEach(servidor => {
-                    const option = document.createElement('option');
-                    option.value = servidor.id;
-                    option.textContent = `${servidor.nombre} (${servidor.miembros} miembros)`;
-                    select.appendChild(option);
-                });
-            } catch (error) {
-                console.error('Error cargando servidores:', error);
-            }
-        }
-
-// Cargar canales cuando se selecciona un servidor
-document.getElementById('servidor-select').addEventListener('change', async (e) => {
-    const servidorId = e.target.value;
-    servidorActual = servidorId;
-    
-    if (!servidorId) {
-        document.getElementById('canal-select').innerHTML = '<option value="">Selecciona un servidor primero</option>';
-        document.getElementById('usuario-select').innerHTML = '<option value="">Selecciona un usuario</option>';
-        return;
-    }
-
-    // Cargar canales
-    try {
-        const response = await fetch(`/api/canales/${servidorId}`);
-        
-        // ← AGREGADO: Verificar si la respuesta es OK
-        if (!response.ok) {
-            console.error('Error en API canales:', response.status);
-            document.getElementById('canal-select').innerHTML = '<option value="">Error cargando canales</option>';
-            return;
-        }
-        
-        const canales = await response.json();
-        
-        // ← AGREGADO: Verificar que sea un array
-        if (!Array.isArray(canales)) {
-            console.error('Respuesta de canales no es un array:', canales);
-            document.getElementById('canal-select').innerHTML = '<option value="">Error cargando canales</option>';
-            return;
-        }
-        
-        const select = document.getElementById('canal-select');
-        select.innerHTML = '<option value="">Selecciona un canal</option>';
-        
-        let categoriaActual = null;
-        canales.forEach(canal => {
-            if (canal.categoria !== categoriaActual) {
-                categoriaActual = canal.categoria;
-                const optgroup = document.createElement('optgroup');
-                optgroup.label = categoriaActual;
-                select.appendChild(optgroup);
-            }
-            
-            const option = document.createElement('option');
-            option.value = canal.id;
-            option.textContent = `# ${canal.nombre}`;
-            select.lastElementChild.appendChild(option);
-        });
-    } catch (error) {
-        console.error('Error cargando canales:', error);
-        document.getElementById('canal-select').innerHTML = '<option value="">Error cargando canales</option>';
-    }
-
-// Cargar usuarios
-    try {
-        const response = await fetch(`/api/usuarios/${servidorId}`);
-        
-        if (!response.ok) {
-            console.error('Error en API usuarios:', response.status);
-            document.getElementById('usuario-select').innerHTML = '<option value="">Error cargando usuarios</option>';
-            return;
-        }
-        
-        const usuarios = await response.json();
-        
-        if (!Array.isArray(usuarios)) {
-            console.error('Respuesta de usuarios no es un array:', usuarios);
-            document.getElementById('usuario-select').innerHTML = '<option value="">Error cargando usuarios</option>';
-            return;
-        }
-        
-        const select = document.getElementById('usuario-select');
-        select.innerHTML = '<option value="">Selecciona un usuario</option>';
-        
-        // ← AGREGAR OPCIONES ESPECIALES
-        const optgroupEspecial = document.createElement('optgroup');
-        optgroupEspecial.label = '📢 Menciones especiales';
-        
-        const optionEveryone = document.createElement('option');
-        optionEveryone.value = '@everyone';
-        optionEveryone.textContent = '@everyone (menciona a todos)';
-        optgroupEspecial.appendChild(optionEveryone);
-        
-        const optionHere = document.createElement('option');
-        optionHere.value = '@here';
-        optionHere.textContent = '@here (menciona a los conectados)';
-        optgroupEspecial.appendChild(optionHere);
-        
-        select.appendChild(optgroupEspecial);
-        
-        // ← AGREGAR USUARIOS NORMALES
-        const optgroupUsuarios = document.createElement('optgroup');
-        optgroupUsuarios.label = '👤 Usuarios';
-        
-        usuarios.forEach(usuario => {
-            const option = document.createElement('option');
-            option.value = usuario.id;
-            option.textContent = usuario.display_name;
-            optgroupUsuarios.appendChild(option);
-        });
-        
-        select.appendChild(optgroupUsuarios);
-        
-    } catch (error) {
-        console.error('Error cargando usuarios:', error);
-        document.getElementById('usuario-select').innerHTML = '<option value="">Error cargando usuarios</option>';
-    }
-});
-
-// Cargar mensajes cuando se selecciona un canal
-document.getElementById('canal-select').addEventListener('change', async (e) => {
-    const canalId = e.target.value;
-    
-    // Detener intervalo anterior si existe
-    if (intervalMensajes) {
-        clearInterval(intervalMensajes);
-        intervalMensajes = null;
-    }
-    
-    // Cargar mensajes iniciales
-    await cargarMensajes(canalId);
-    
-    // Iniciar auto-actualización cada 5 segundos
-    if (canalId) {
-        intervalMensajes = setInterval(() => {
-            cargarMensajes(canalId, true);  // true = silencioso (no mostrar "Cargando...")
-        }, 5000);
-    }
-});
-
-        // Agregar mención al mensaje
-        function agregarMencion() {
-            const usuarioSelect = document.getElementById('usuario-select');
-            const mensajeInput = document.getElementById('mensaje-input');
-            
-            if (!usuarioSelect.value) {
-                mostrarEstado('Selecciona un usuario primero', 'error');
-                return;
-            }
-
-            const usuarioId = usuarioSelect.value;
-            const mencion = `<@${usuarioId}>`;
-            
-            mensajeInput.value += (mensajeInput.value ? ' ' : '') + mencion;
-            mostrarEstado('Mención agregada', 'success');
-        }
-
-        // Enviar mensaje
-        async function enviarMensaje() {
-            const canalId = document.getElementById('canal-select').value;
-            const mensaje = document.getElementById('mensaje-input').value;
-
-            if (!canalId) {
-                mostrarEstado('Selecciona un canal', 'error');
-                return;
-            }
-
-            if (!mensaje.trim()) {
-                mostrarEstado('Escribe un mensaje', 'error');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/enviar', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({
-                        canal_id: canalId,
-                        mensaje: mensaje
-                    })
-                });
-
-                const result = await response.json();
-
-                if (response.ok) {
-                    mostrarEstado('✅ Mensaje enviado correctamente', 'success');
-                    document.getElementById('mensaje-input').value = '';
-
-                     if (canalActual) {
-        await cargarMensajes(canalActual, true);
-    }
-                } else {
-                    mostrarEstado(`❌ Error: ${result.error}`, 'error');
-                }
-            } catch (error) {
-                mostrarEstado(`❌ Error de conexión: ${error}`, 'error');
-            }
-        }
-
-        // Mostrar estado del mensaje
-        function mostrarEstado(mensaje, tipo) {
-            const statusDiv = document.getElementById('mensaje-status');
-            statusDiv.textContent = mensaje;
-            statusDiv.className = `status-message ${tipo}`;
-            
-            setTimeout(() => {
-                statusDiv.textContent = '';
-                statusDiv.className = 'status-message';
-            }, 3000);
-        }
-
-        // Cargar estadísticas
-        async function cargarEstadisticas() {
-            try {
-                const response = await fetch('/api/stats');
-                const stats = await response.json();
-                
-                document.getElementById('stat-servidores').textContent = stats.servidores;
-                document.getElementById('stat-canales').textContent = stats.canales;
-                document.getElementById('stat-usuarios').textContent = stats.usuarios;
-                document.getElementById('stat-latencia').textContent = `${stats.latencia}ms`;
-            } catch (error) {
-                console.error('Error cargando estadísticas:', error);
-            }
-        }
-
-        // Cargar mensajes de un canal
-       // Cargar mensajes de un canal
-async function cargarMensajes(canalId, silencioso = false) {
-    const messagesSection = document.getElementById('messages-section');
-    const messagesContainer = document.getElementById('messages-container');
-    
-    if (!canalId) {
-        messagesSection.style.display = 'none';
-        canalActual = null;
-        
-        // Detener auto-actualización
-        if (intervalMensajes) {
-            clearInterval(intervalMensajes);
-            intervalMensajes = null;
-        }
-        return;
-    }
-
-    canalActual = canalId;
-    messagesSection.style.display = 'block';
-    
-    // Solo mostrar "Cargando..." la primera vez
-    if (!silencioso) {
-        messagesContainer.innerHTML = '<div class="loading-messages">Cargando mensajes...</div>';
-    }
-
-    try {
-        const response = await fetch(`/api/mensajes/${canalId}`);
-        
-        if (!response.ok) {
-            messagesContainer.innerHTML = '<div class="no-messages">Error cargando mensajes</div>';
-            return;
-        }
-        
-        const mensajes = await response.json();
-        
-        if (!Array.isArray(mensajes) || mensajes.length === 0) {
-            messagesContainer.innerHTML = '<div class="no-messages">No hay mensajes en este canal</div>';
-            return;
-        }
-
-        // Guardar posición del scroll
-        const scrollAlFinal = messagesContainer.scrollHeight - messagesContainer.scrollTop <= messagesContainer.clientHeight + 50;
-
-        messagesContainer.innerHTML = '';
-        
-        mensajes.forEach(mensaje => {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = 'message-item';
-            
-            // Avatar
-            const avatarDiv = document.createElement('div');
-            avatarDiv.className = 'message-avatar';
-            
-            if (mensaje.autor_avatar) {
-                const avatarImg = document.createElement('img');
-                avatarImg.src = mensaje.autor_avatar;
-                avatarImg.alt = mensaje.autor;
-                avatarDiv.appendChild(avatarImg);
-            } else {
-                avatarDiv.textContent = mensaje.autor.charAt(0).toUpperCase();
-            }
-            
-            // Contenido
-            const contentWrapper = document.createElement('div');
-            contentWrapper.className = 'message-content-wrapper';
-            
-            // Header (autor + timestamp)
-            const headerDiv = document.createElement('div');
-            headerDiv.className = 'message-header';
-            
-            const authorSpan = document.createElement('span');
-            authorSpan.className = 'message-author';
-            authorSpan.textContent = mensaje.autor;
-            
-            const timestampSpan = document.createElement('span');
-            timestampSpan.className = 'message-timestamp';
-            const date = new Date(mensaje.timestamp);
-            timestampSpan.textContent = date.toLocaleString('es-ES', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            });
-            
-            headerDiv.appendChild(authorSpan);
-            headerDiv.appendChild(timestampSpan);
-            
-            // Texto del mensaje
-            const textDiv = document.createElement('div');
-            textDiv.className = 'message-text';
-            textDiv.textContent = mensaje.contenido || '(mensaje sin texto)';
-            
-            contentWrapper.appendChild(headerDiv);
-            contentWrapper.appendChild(textDiv);
-            
-            // Adjuntos (imágenes)
-            if (mensaje.adjuntos && mensaje.adjuntos.length > 0) {
-                mensaje.adjuntos.forEach(url => {
-                    const attachmentDiv = document.createElement('div');
-                    attachmentDiv.className = 'message-attachment';
-                    
-                    if (url.match(/\.(jpeg|jpg|gif|png|webp)$/i)) {
-                        const img = document.createElement('img');
-                        img.src = url;
-                        img.alt = 'Imagen adjunta';
-                        attachmentDiv.appendChild(img);
-                    }
-                    
-                    contentWrapper.appendChild(attachmentDiv);
-                });
-            }
-            
-            messageDiv.appendChild(avatarDiv);
-            messageDiv.appendChild(contentWrapper);
-            messagesContainer.appendChild(messageDiv);
-        });
-        
-        // Scroll al final solo si estaba al final antes
-        if (scrollAlFinal || !silencioso) {
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-        
-    } catch (error) {
-        console.error('Error cargando mensajes:', error);
-        if (!silencioso) {
-            messagesContainer.innerHTML = '<div class="no-messages">Error cargando mensajes</div>';
-        }
-    }
-}
-        // Inicializar dashboard
+        // ========================================
+        // INICIALIZACIÓN
+        // ========================================
         window.onload = () => {
-            cargarServidores();
-            cargarEstadisticas();
-            
-            // Actualizar estadísticas cada 30 segundos
-            setInterval(cargarEstadisticas, 30000);
+            loadServers();
+            loadStats();
         };
 
-        // Permitir Enter para enviar (Ctrl+Enter para nueva línea)
-        document.getElementById('mensaje-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.ctrlKey) {
-                e.preventDefault();
-                enviarMensaje();
+        // ========================================
+        // NAVEGACIÓN DE PÁGINAS
+        // ========================================
+        function showPage(pageName) {
+            // Ocultar todas las páginas
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+
+            // Actualizar sidebar
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // Mostrar página seleccionada
+            document.getElementById(`page-${pageName}`).classList.add('active');
+            event.target.closest('.nav-item').classList.add('active');
+
+            // Limpiar intervalos
+            clearIntervals();
+
+            // Cargar datos según la página
+            if (pageName === 'servers') {
+                loadServers();
+            } else if (pageName === 'stats') {
+                loadStats();
             }
-        });
+        }
+
+        function showDashboardTab(tabName) {
+            // Actualizar botones
+            document.querySelectorAll('.tab-btn-internal').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Mostrar contenido
+            document.querySelectorAll('.dashboard-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`dashboard-${tabName}`).classList.add('active');
+
+            // Limpiar intervalos anteriores
+            clearIntervals();
+
+            // Cargar datos según la pestaña
+            if (tabName === 'music') {
+                loadMusicPanel();
+            } else if (tabName === 'messages') {
+                loadChannels();
+            }
+        }
+
+        function clearIntervals() {
+            if (musicUpdateInterval) {
+                clearInterval(musicUpdateInterval);
+                musicUpdateInterval = null;
+            }
+            if (messagesUpdateInterval) {
+                clearInterval(messagesUpdateInterval);
+                messagesUpdateInterval = null;
+            }
+        }
+
+        // ========================================
+        // SERVIDORES
+        // ========================================
+        function loadServers() {
+            fetch('/api/servidores')
+                .then(response => response.json())
+                .then(servers => {
+                    const grid = document.getElementById('servers-grid');
+                    
+                    if (servers.length === 0) {
+                        grid.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No hay servidores disponibles</p>';
+                        return;
+                    }
+
+                    grid.innerHTML = servers.map(server => `
+                        <div class="server-card" onclick="enterServer('${server.id}', '${server.nombre}', '${server.icono || ''}', ${server.miembros})">
+                            <div class="server-icon">
+                                ${server.icono 
+                                    ? `<img src="${server.icono}" alt="${server.nombre}">` 
+                                    : '🏠'
+                                }
+                            </div>
+                            <div class="server-info">
+                                <div class="server-name">${server.nombre}</div>
+                                <div class="server-members">
+                                    👥 ${server.miembros} miembros
+                                </div>
+                            </div>
+                            <button class="btn-enter" onclick="event.stopPropagation(); enterServer('${server.id}', '${server.nombre}', '${server.icono || ''}', ${server.miembros})">
+                                Entrar
+                            </button>
+                        </div>
+                    `).join('');
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('servers-grid').innerHTML = 
+                        '<p style="text-align: center; color: var(--danger);">Error al cargar servidores</p>';
+                });
+        }
+
+        function enterServer(serverId, serverName, serverIcon, serverMembers) {
+            currentServerId = serverId;
+            currentServerData = {
+                id: serverId,
+                name: serverName,
+                icon: serverIcon,
+                members: serverMembers
+            };
+
+            // Actualizar header
+            const headerIcon = document.getElementById('server-header-icon');
+            if (serverIcon) {
+                headerIcon.innerHTML = `<img src="${serverIcon}" alt="${serverName}">`;
+            } else {
+                headerIcon.innerHTML = '🏠';
+            }
+
+            document.getElementById('server-header-name').textContent = serverName;
+            document.getElementById('server-header-members').textContent = `${serverMembers} miembros`;
+
+            // Mostrar dashboard del servidor
+            document.getElementById('page-servers').classList.remove('active');
+            document.getElementById('page-server-dashboard').classList.add('active');
+
+            // Cargar música por defecto
+            loadMusicPanel();
+        }
+
+        function backToServers() {
+            clearIntervals();
+            currentServerId = null;
+            currentServerData = null;
+
+            document.getElementById('page-server-dashboard').classList.remove('active');
+            document.getElementById('page-servers').classList.add('active');
+
+            // Resetear pestañas
+            document.querySelectorAll('.tab-btn-internal').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-btn-internal')[0].classList.add('active');
+            
+            document.querySelectorAll('.dashboard-content').forEach(content => content.classList.remove('active'));
+            document.getElementById('dashboard-music').classList.add('active');
+        }
+
+        // ========================================
+        // MÚSICA
+        // ========================================
+        function loadMusicPanel() {
+            if (!currentServerId) return;
+
+            updateMusicState();
+            
+            // Actualizar cada 3 segundos
+            musicUpdateInterval = setInterval(updateMusicState, 3000);
+        }
+
+        function updateMusicState() {
+            if (!currentServerId) return;
+
+            fetch(`/api/music/${currentServerId}`)
+                .then(response => response.json())
+                .then(data => renderMusicPanel(data))
+                .catch(error => console.error('Error:', error));
+        }
+
+        function renderMusicPanel(state) {
+            const container = document.getElementById('music-panel-container');
+
+            if (!state.connected) {
+                container.innerHTML = `
+                    <div class="music-panel">
+                        <div class="music-status">
+                            <span class="status-badge disconnected">⚫ Desconectado</span>
+                            <p style="text-align: center; color: var(--text-secondary); padding: 40px;">
+                                El bot no está conectado a ningún canal de voz
+                            </p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="music-panel">
+                    <!-- Estado actual -->
+                    <div class="music-status">
+                        <span class="status-badge connected">🟢 Conectado</span>
+                        ${state.current ? `
+                            <div class="current-song">
+                                ${state.current.thumbnail ? `
+                                    <div class="song-thumbnail">
+                                        <img src="${state.current.thumbnail}" alt="Thumbnail">
+                                    </div>
+                                ` : ''}
+                                <div class="song-details">
+                                    <h3>${state.current.title}</h3>
+                                    <div class="song-meta">
+                                        <span>⏱️ ${formatDuration(state.current.duration)}</span>
+                                        <span>👤 ${state.current.requested_by}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : '<p style="text-align: center; color: var(--text-secondary); padding: 20px;">No hay nada reproduciéndose</p>'}
+                    </div>
+
+                    <!-- Controles -->
+                    <div class="music-controls">
+                        <button class="control-btn" onclick="togglePause()">
+                            ${state.paused ? '▶️' : '⏸️'} ${state.paused ? 'Reanudar' : 'Pausar'}
+                        </button>
+                        <button class="control-btn" onclick="skipSong()">
+                            ⏭️ Skip
+                        </button>
+                        <button class="control-btn danger" onclick="stopMusic()">
+                            ⏹️ Detener
+                        </button>
+                    </div>
+
+                    <!-- Opciones -->
+                    <div class="music-options">
+                        <button class="option-toggle ${state.loop ? 'active' : ''}" onclick="toggleLoop()">
+                            🔁 Loop ${state.loop ? '(Activo)' : ''}
+                        </button>
+                        <button class="option-toggle ${state.autoplay ? 'active' : ''}" onclick="toggleAutoplay()">
+                            🎲 Autoplay ${state.autoplay ? '(Activo)' : ''}
+                        </button>
+                        ${state.queue.length > 0 ? `
+                            <button class="option-toggle" onclick="clearQueue()">
+                                🗑️ Limpiar Cola
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <!-- Volumen -->
+                    <div class="volume-section">
+                        <div class="volume-label">
+                            <span>🔊 Volumen</span>
+                            <span class="volume-value">${state.volume}%</span>
+                        </div>
+                        <input 
+                            type="range" 
+                            class="volume-slider" 
+                            min="0" 
+                            max="100" 
+                            value="${state.volume}"
+                            oninput="document.querySelector('.volume-value').textContent = this.value + '%'"
+                            onchange="setVolume(this.value)"
+                        >
+                    </div>
+
+                    <!-- Cola -->
+                    ${state.queue.length > 0 ? `
+                        <div class="queue-section">
+                            <div class="queue-header">
+                                <h3>📋 Cola de Reproducción (${state.queue.length})</h3>
+                            </div>
+                            <div class="queue-list">
+                                ${state.queue.map(song => `
+                                    <div class="queue-item" 
+                                         draggable="true"
+                                         ondragstart="dragStart(event, ${song.index})"
+                                         ondragend="dragEnd(event)"
+                                         ondragover="allowDrop(event)"
+                                         ondrop="drop(event, ${song.index})"
+                                         style="cursor: move;">
+                                        <div class="queue-number">${song.index + 1}</div>
+                                        <div class="queue-song-info">
+                                            <div class="queue-song-title">${song.title}</div>
+                                            <div class="queue-song-meta">
+                                                👤 ${song.requested_by} • ⏱️ ${formatDuration(song.duration)}
+                                            </div>
+                                        </div>
+                                        <div style="display: flex; gap: 5px; align-items: center;">
+                                            ${song.index > 0 ? `
+                                                <button class="btn-remove" onclick="event.stopPropagation(); moveUp(${song.index})" title="Subir">
+                                                    ⬆️
+                                                </button>
+                                            ` : ''}
+                                            ${song.index < state.queue.length - 1 ? `
+                                                <button class="btn-remove" onclick="event.stopPropagation(); moveDown(${song.index}, ${state.queue.length - 1})" title="Bajar">
+                                                    ⬇️
+                                                </button>
+                                            ` : ''}
+                                            <button class="btn-remove" onclick="event.stopPropagation(); removeSong(${song.index})" title="Eliminar">
+                                                ❌
+                                            </button>
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        function formatDuration(seconds) {
+            if (!seconds) return '?';
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        // Controles de música
+        function togglePause() {
+            fetch(`/api/music/${currentServerId}/pause`, { method: 'POST' })
+                .then(response => response.json())
+                .then(() => updateMusicState())
+                .catch(error => console.error('Error:', error));
+        }
+
+        function skipSong() {
+            fetch(`/api/music/${currentServerId}/skip`, { method: 'POST' })
+                .then(response => response.json())
+                .then(() => updateMusicState())
+                .catch(error => console.error('Error:', error));
+        }
+
+        function stopMusic() {
+            if (!confirm('¿Detener la reproducción y desconectar el bot?')) return;
+            
+            fetch(`/api/music/${currentServerId}/stop`, { method: 'POST' })
+                .then(response => response.json())
+                .then(() => updateMusicState())
+                .catch(error => console.error('Error:', error));
+        }
+
+        function toggleLoop() {
+            fetch(`/api/music/${currentServerId}/loop`, { method: 'POST' })
+                .then(response => response.json())
+                .then(() => updateMusicState())
+                .catch(error => console.error('Error:', error));
+        }
+
+        function toggleAutoplay() {
+            fetch(`/api/music/${currentServerId}/autoplay`, { method: 'POST' })
+                .then(response => response.json())
+                .then(() => updateMusicState())
+                .catch(error => console.error('Error:', error));
+        }
+
+        function setVolume(volume) {
+            fetch(`/api/music/${currentServerId}/volume`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ volume: parseInt(volume) })
+            }).catch(error => console.error('Error:', error));
+        }
+
+        function removeSong(index) {
+            fetch(`/api/music/${currentServerId}/remove/${index}`, { method: 'DELETE' })
+                .then(response => response.json())
+                .then(() => updateMusicState())
+                .catch(error => console.error('Error:', error));
+        }
+
+        function clearQueue() {
+            if (!confirm('¿Limpiar toda la cola de reproducción?')) return;
+            
+            fetch(`/api/music/${currentServerId}/clear`, { method: 'POST' })
+                .then(response => response.json())
+                .then(() => updateMusicState())
+                .catch(error => console.error('Error:', error));
+        }
+
+        // ========================================
+        // MENSAJES
+        // ========================================
+        function loadChannels() {
+            if (!currentServerId) return;
+
+            fetch(`/api/canales/${currentServerId}`)
+                .then(response => response.json())
+                .then(channels => {
+                    const select = document.getElementById('channel-select');
+                    select.innerHTML = '<option value="">-- Selecciona un canal --</option>';
+                    
+                    channels.forEach(channel => {
+                        const option = document.createElement('option');
+                        option.value = channel.id;
+                        option.textContent = `# ${channel.nombre} (${channel.categoria})`;
+                        select.appendChild(option);
+                    });
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function loadMessages() {
+            const channelId = document.getElementById('channel-select').value;
+            if (!channelId) return;
+
+            currentChannelId = channelId;
+
+            // Limpiar intervalo anterior
+            if (messagesUpdateInterval) {
+                clearInterval(messagesUpdateInterval);
+            }
+
+            // Cargar inmediatamente
+            updateMessages();
+
+            // Actualizar cada 5 segundos
+            messagesUpdateInterval = setInterval(updateMessages, 5000);
+        }
+
+        function updateMessages() {
+            if (!currentChannelId) return;
+
+            fetch(`/api/mensajes/${currentChannelId}`)
+                .then(response => response.json())
+                .then(messages => {
+                    const container = document.getElementById('messages-container');
+                    
+                    if (messages.length === 0) {
+                        container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No hay mensajes en este canal</p>';
+                        return;
+                    }
+
+                    container.innerHTML = messages.map(msg => `
+                        <div class="message">
+                            <img 
+                                src="${msg.autor_avatar || 'https://cdn.discordapp.com/embed/avatars/0.png'}" 
+                                alt="Avatar" 
+                                class="message-avatar"
+                            >
+                            <div class="message-content">
+                                <div class="message-author">${msg.autor}</div>
+                                <div class="message-text">${msg.contenido || '<i>(sin contenido)</i>'}</div>
+                                ${msg.adjuntos && msg.adjuntos.length > 0 ? `
+                                    <div style="margin-top: 5px;">
+                                        ${msg.adjuntos.map(url => `
+                                            <a href="${url}" target="_blank" style="color: var(--accent);">📎 Adjunto</a>
+                                        `).join(' ')}
+                                    </div>
+                                ` : ''}
+                                <div class="message-time">${new Date(msg.timestamp).toLocaleString()}</div>
+                            </div>
+                        </div>
+                    `).join('');
+
+                    // Scroll al final
+                    container.scrollTop = container.scrollHeight;
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('message-input');
+            const text = input.value.trim();
+
+            if (!text) {
+                alert('Escribe un mensaje primero');
+                return;
+            }
+
+            if (!currentChannelId) {
+                alert('Selecciona un canal primero');
+                return;
+            }
+
+            fetch('/api/enviar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    canal_id: currentChannelId,
+                    mensaje: text
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = '';
+                        updateMessages();
+                    } else {
+                        alert('Error al enviar mensaje');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al enviar mensaje');
+                });
+        }
+
+        // ========================================
+        // ESTADÍSTICAS
+        // ========================================
+        function loadStats() {
+            fetch('/api/stats')
+                .then(response => response.json())
+                .then(stats => {
+                    const container = document.getElementById('stats-container');
+                    container.innerHTML = `
+                        <div class="stat-card">
+                            <div class="stat-icon">🏠</div>
+                            <div class="stat-value">${stats.servidores}</div>
+                            <div class="stat-label">Servidores</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">💬</div>
+                            <div class="stat-value">${stats.canales}</div>
+                            <div class="stat-label">Canales</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-value">${stats.usuarios}</div>
+                            <div class="stat-label">Usuarios</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">⚡</div>
+                            <div class="stat-value">${stats.latencia}ms</div>
+                            <div class="stat-label">Latencia</div>
+                        </div>
+                    `;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('stats-container').innerHTML = 
+                        '<p style="text-align: center; color: var(--danger);">Error al cargar estadísticas</p>';
+                });
+        }
+        // ========================================
+        // AGREGAR CANCIONES
+        // ========================================
+        function addSong() {
+            const input = document.getElementById('music-search-input');
+            const query = input.value.trim();
+
+            if (!query) {
+                alert('Escribe una búsqueda o pega una URL');
+                return;
+            }
+
+            if (!currentServerId) {
+                alert('Selecciona un servidor primero');
+                return;
+            }
+
+            // Mostrar feedback
+            input.disabled = true;
+            input.placeholder = 'Agregando...';
+
+            fetch(`/api/music/${currentServerId}/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: query })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        input.value = '';
+                        input.placeholder = 'Buscar canción o pegar URL de YouTube...';
+                        updateMusicState();
+                        
+                        // Mostrar notificación temporal
+                        const notification = document.createElement('div');
+                        notification.style.cssText = `
+                            position: fixed;
+                            top: 20px;
+                            right: 20px;
+                            background: var(--success);
+                            color: white;
+                            padding: 15px 25px;
+                            border-radius: 8px;
+                            z-index: 9999;
+                            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+                        `;
+                        notification.textContent = `✅ ${data.message}`;
+                        document.body.appendChild(notification);
+                        
+                        setTimeout(() => notification.remove(), 3000);
+                    } else {
+                        alert('Error: ' + (data.error || 'No se pudo agregar la canción'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al agregar canción');
+                })
+                .finally(() => {
+                    input.disabled = false;
+                    input.placeholder = 'Buscar canción o pegar URL de YouTube...';
+                });
+        }
+
+        // ========================================
+        // REORDENAR COLA
+        // ========================================
+        let draggedIndex = null;
+
+        function allowDrop(event) {
+            event.preventDefault();
+        }
+
+        function dragStart(event, index) {
+            draggedIndex = index;
+            event.target.style.opacity = '0.5';
+        }
+
+        function dragEnd(event) {
+            event.target.style.opacity = '1';
+        }
+
+        function drop(event, dropIndex) {
+            event.preventDefault();
+            
+            if (draggedIndex === null || draggedIndex === dropIndex) {
+                return;
+            }
+
+            // Reordenar en el servidor
+            fetch(`/api/music/${currentServerId}/reorder`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from: draggedIndex, to: dropIndex })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateMusicState();
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+
+            draggedIndex = null;
+        }
+
+        function moveUp(index) {
+            if (index === 0) return;
+            
+            fetch(`/api/music/${currentServerId}/reorder`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from: index, to: index - 1 })
+            })
+                .then(response => response.json())
+                .then(() => updateMusicState())
+                .catch(error => console.error('Error:', error));
+        }
+
+        function moveDown(index, maxIndex) {
+            if (index >= maxIndex) return;
+            
+            fetch(`/api/music/${currentServerId}/reorder`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ from: index, to: index + 1 })
+            })
+                .then(response => response.json())
+                .then(() => updateMusicState())
+                .catch(error => console.error('Error:', error));
+        }
     </script>
 </body>
 </html>

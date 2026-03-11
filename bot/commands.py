@@ -15,7 +15,7 @@ def setup_commands(bot):
     
     @bot.command(name='help')
     async def ayuda(ctx, categoria=None):
-        """Comando de ayuda con subcategorías: user, admin"""
+        """Comando de ayuda con subcategorías: user, admin, music"""
         es_admin = ctx.author.guild_permissions.administrator
         
         if categoria is None:
@@ -38,6 +38,12 @@ def setup_commands(bot):
             else:
                 await ctx.send("No tienes permisos para ver los comandos de administrador.")
         
+        elif categoria.lower() == 'music':
+            mensaje = "**🎵 COMANDOS DE MÚSICA:**\n\n"
+            for cmd, desc in RESPUESTAS['music'].items():
+                mensaje += f"{cmd} {desc}\n"
+            await ctx.send(mensaje)
+        
         elif categoria.lower() == 'personas':
             comandos = '\n'.join([f'`${cmd}`' for cmd in RESPUESTAS['personas'].keys()])
             mensaje = "**COMANDOS DE PERSONAS:**\n" + comandos
@@ -45,7 +51,6 @@ def setup_commands(bot):
         
         else:
             await ctx.send("Categoría no encontrada. Usa `$help` para ver las opciones disponibles.")
-
     @bot.command(name='testspam')
     async def test_spam(ctx):
         """Comando para probar el sistema de spam manualmente"""
@@ -110,18 +115,65 @@ Canal: <#{CANAL_SPAM_ID}>"""
             return
         
         if cantidad > 100:
-            await ctx.send("No sea abusivo, solo puedo borrar 100 mensajes", delete_after=5)
+            await ctx.send("No sea abusivo, solo puedo borrar 100 mensajes a la vez", delete_after=5)
             return
         
         try:
+            # Borrar el comando primero
             await ctx.message.delete()
-            mensajes_borrados = await ctx.channel.purge(limit=cantidad)
-            confirmacion = await ctx.send(f"Se borraron **{len(mensajes_borrados)}** mensajes.")
+            
+            # Obtener mensajes a borrar
+            mensajes_a_borrar = []
+            async for message in ctx.channel.history(limit=cantidad):
+                # Discord solo permite borrar mensajes de menos de 14 días
+                if (discord.utils.utcnow() - message.created_at).days < 14:
+                    mensajes_a_borrar.append(message)
+            
+            if not mensajes_a_borrar:
+                confirmacion = await ctx.send("No hay mensajes para borrar (deben ser de menos de 14 días)")
+                await confirmacion.delete(delay=5)
+                return
+            
+            # Borrar en lotes de 100 (límite de Discord)
+            total_borrados = 0
+            
+            # Si hay 2 o más mensajes, usar bulk_delete (más rápido)
+            if len(mensajes_a_borrar) >= 2:
+                # Dividir en chunks de 100
+                for i in range(0, len(mensajes_a_borrar), 100):
+                    chunk = mensajes_a_borrar[i:i+100]
+                    try:
+                        await ctx.channel.delete_messages(chunk)
+                        total_borrados += len(chunk)
+                    except discord.HTTPException as e:
+                        print(f"[ERROR AL BORRAR CHUNK] {e}")
+                        # Si falla bulk delete, intentar uno por uno
+                        for msg in chunk:
+                            try:
+                                await msg.delete()
+                                total_borrados += 1
+                            except:
+                                pass
+            else:
+                # Si es solo 1 mensaje, borrarlo directamente
+                for msg in mensajes_a_borrar:
+                    try:
+                        await msg.delete()
+                        total_borrados += 1
+                    except:
+                        pass
+            
+            confirmacion = await ctx.send(f"Se borraron **{total_borrados}** mensajes.")
             await confirmacion.delete(delay=3)
+            
         except discord.Forbidden:
             await ctx.send("No tengo permisos para borrar mensajes.", delete_after=5)
         except discord.HTTPException as e:
-            await ctx.send(f"Error al borrar mensajes: {e}", delete_after=5)
+            print(f"[ERROR AL BORRAR] {e}")
+            await ctx.send(f"Hubo un error al borrar algunos mensajes. Se borraron los que se pudieron.", delete_after=5)
+        except Exception as e:
+            print(f"[ERROR INESPERADO] {e}")
+            await ctx.send(f"Error inesperado al borrar mensajes.", delete_after=5)
 
     @bot.command(name='permisos')
     async def ver_permisos(ctx):

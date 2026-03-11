@@ -189,7 +189,8 @@ def setup_events(bot):
 async def ejecutar_comando_ia(message, comando_str, user_id, bot):
     """Ejecuta comandos extraídos por la IA"""
     from .tasks import spam_periodico
-    from config import CANAL_SPAM_ID, mensajes_random, obtener_mensaje_sin_repetir
+    from config import CANAL_SPAM_ID, mensajes_random, obtener_mensaje_sin_repetir, ZORCUZ_ID
+    import discord
     
     es_admin = message.author.guild_permissions.administrator
     es_zorcuz = user_id == ZORCUZ_ID
@@ -210,13 +211,56 @@ async def ejecutar_comando_ia(message, comando_str, user_id, bot):
                     await message.channel.send("Debes especificar una cantidad entre 1 y 100.")
                     return True
                 
-                mensajes_borrados = await message.channel.purge(limit=cantidad)
-                confirmacion = await message.channel.send(f"Se borraron **{len(mensajes_borrados)}** mensajes.")
+                # Obtener mensajes a borrar
+                mensajes_a_borrar = []
+                async for msg in message.channel.history(limit=cantidad + 1):  # +1 para incluir el mensaje del usuario
+                    # Discord solo permite borrar mensajes de menos de 14 días
+                    if (discord.utils.utcnow() - msg.created_at).days < 14:
+                        mensajes_a_borrar.append(msg)
+                
+                if not mensajes_a_borrar:
+                    await message.channel.send("No hay mensajes para borrar (deben ser de menos de 14 días)", delete_after=5)
+                    return True
+                
+                # Borrar en lotes
+                total_borrados = 0
+                
+                if len(mensajes_a_borrar) >= 2:
+                    # Dividir en chunks de 100
+                    for i in range(0, len(mensajes_a_borrar), 100):
+                        chunk = mensajes_a_borrar[i:i+100]
+                        try:
+                            await message.channel.delete_messages(chunk)
+                            total_borrados += len(chunk)
+                        except discord.HTTPException as e:
+                            print(f"[ERROR AL BORRAR CHUNK IA] {e}")
+                            # Si falla bulk delete, intentar uno por uno
+                            for msg in chunk:
+                                try:
+                                    await msg.delete()
+                                    total_borrados += 1
+                                except:
+                                    pass
+                else:
+                    # Si es solo 1 mensaje, borrarlo directamente
+                    for msg in mensajes_a_borrar:
+                        try:
+                            await msg.delete()
+                            total_borrados += 1
+                        except:
+                            pass
+                
+                confirmacion = await message.channel.send(f"Se borraron **{total_borrados}** mensajes.")
                 await confirmacion.delete(delay=3)
-                print(f"[COMANDO IA] {message.author} borró {len(mensajes_borrados)} mensajes")
+                print(f"[COMANDO IA] {message.author} borró {total_borrados} mensajes")
                 return True
+                
             except ValueError:
                 await message.channel.send("Cantidad inválida.")
+                return True
+            except Exception as e:
+                print(f"[ERROR AL BORRAR MENSAJES IA] {e}")
+                await message.channel.send("Error al borrar mensajes", delete_after=5)
                 return True
         
         elif comando_str == "COMANDO:activarspam":
@@ -275,11 +319,11 @@ Canal: <#{CANAL_SPAM_ID}>"""
             return True
         
         elif comando_str == "COMANDO:ayuda":
-            mensaje = "**OPCIONES DE AYUDA:**\n\n"
-            mensaje += "`$help user` - Ver comandos de usuario\n"
+            mensaje_ayuda = "**OPCIONES DE AYUDA:**\n\n"
+            mensaje_ayuda += "`$help user` - Ver comandos de usuario\n"
             if puede_ejecutar_admin:
-                mensaje += "`$help admin` - Ver comandos de administrador\n"
-            await message.channel.send(mensaje)
+                mensaje_ayuda += "`$help admin` - Ver comandos de administrador\n"
+            await message.channel.send(mensaje_ayuda)
             return True
         
         return False
