@@ -16,7 +16,7 @@ USUARIOS_PERSONALIDADES = {
     751481025544061111: {
         "nombre": "Oscar",
         "apodos": ["mierdoscar"],
-        "caracteristicas": ["mocho (le falta un brazo) sin apéndice", "pajas locas"]
+        "caracteristicas": ["pajas locas"]
     },
     1279194969764139062: {
         "nombre": "Gabriela",
@@ -31,7 +31,7 @@ USUARIOS_PERSONALIDADES = {
     725173193932800042: {
         "nombre": "Francisco",
         "apodos": ["reno", "renoUrss", "mrft", "renocoper"],
-        "caracteristicas": ["enano", "egocéntrico", "estúpido", "siempre quiere tener la razón", "negro de mierda", "femboy", "lesbiana", "gymrat gay", "mono chupapollas", "malo en el league of legends"]
+        "caracteristicas": ["enano", "egocéntrico", "estúpido", "siempre quiere tener la razón", "negro de mierda", "femboy", "lesbiana", "gymrat gay", "mono chupapollas", "malo en el league of legends", "le gusta debatir pero en sus debates siempre quiere tener la razon y nadie mas", "es una jodida perra de mierda"]
     },
     708005339282276392: {
         "nombre": "Duvan",
@@ -78,11 +78,6 @@ USUARIOS_PERSONALIDADES = {
         "apodos": ["finzz", "barefinzz", "mierdinzz"],
         "caracteristicas": ["mete bareto", "mete tussi", "jugador de free fire", "gay", "homosexual", "borracho de mierda", "drogadicto", "bebedor compulsivo", "exhibicionista (le gusta mandar fotos del pene)"]
     },
-    1228748314640646297: {
-        "nombre": "enrique",
-        "apodos": ["DVD", "night", "zzz"],
-        "caracteristicas": ["spamero", "negro", "autista", "da cringe"]
-    },
     1130938300090286130: {
         "nombre": "Omar",
         "apodos": ["Omarsexito"],
@@ -97,5 +92,10 @@ USUARIOS_PERSONALIDADES = {
         "nombre": "",
         "apodos": ["minyagi", "minigay"],
         "caracteristicas": ["veneco", "pobre", "chavista", "malo en el league of legends"]
+    },
+    1407938762855546890: {
+        "nombre": "",
+        "apodos": ["arbol", "la cabra", "el goat"],
+        "caracteristicas": ["es buena gente", "bueno en el league of legends", "la fakin cabra", "siempre tiene la razon", "basado"]
     }
 }
