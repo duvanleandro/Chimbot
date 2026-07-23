@@ -639,3 +639,128 @@ def register_api_routes(app):
             return jsonify({"error": str(e)}), 500
     
     print("✅ Rutas de API registradas")
+
+    # ========================================
+    # ENDPOINTS DE CONFIGURACIÓN DEL DASHBOARD
+    # ========================================
+    
+    @app.route('/api/config', methods=['GET'])
+    def obtener_configuracion():
+        """Obtiene la configuración completa del dashboard"""
+        from config.dashboard_config import cargar_config
+        config = cargar_config()
+        return jsonify(config)
+    
+    @app.route('/api/config', methods=['POST'])
+    def guardar_configuracion():
+        """Guarda la configuración del dashboard"""
+        from config.dashboard_config import guardar_config
+        
+        data = request.json
+        guardar_config(data)
+        
+        return jsonify({"success": True, "message": "Configuración guardada"})
+    
+    @app.route('/api/spam/toggle', methods=['POST'])
+    def toggle_spam():
+        """Activa/desactiva el spam periódico"""
+        from bot.tasks import spam_periodico
+        from config.dashboard_config import cargar_config, guardar_config
+        
+        config = cargar_config()
+        
+        if spam_periodico.is_running():
+            spam_periodico.cancel()
+            config["spam"]["activo"] = False
+            mensaje = "Spam desactivado"
+        else:
+            spam_periodico.start()
+            config["spam"]["activo"] = True
+            mensaje = "Spam activado"
+        
+        guardar_config(config)
+        
+        return jsonify({"success": True, "activo": config["spam"]["activo"], "message": mensaje})
+    
+    @app.route('/api/ia/toggle', methods=['POST'])
+    def toggle_ia():
+        """Activa/desactiva respuestas automáticas de IA"""
+        from config.dashboard_config import cargar_config, guardar_config
+        
+        config = cargar_config()
+        config["ia"]["respuestas_activas"] = not config["ia"]["respuestas_activas"]
+        guardar_config(config)
+        
+        return jsonify({
+            "success": True,
+            "activo": config["ia"]["respuestas_activas"]
+        })
+    
+    @app.route('/api/usuarios', methods=['GET'])
+    def obtener_usuarios_servidor():
+        """Obtiene todos los usuarios de un servidor"""
+        servidor_id = request.args.get('servidor_id')
+        
+        if not servidor_id:
+            return jsonify({"error": "Falta servidor_id"}), 400
+        
+        try:
+            servidor_id = int(servidor_id)
+        except ValueError:
+            return jsonify({"error": "ID inválido"}), 400
+        
+        bot = get_bot()
+        servidor = bot.get_guild(servidor_id)
+        
+        if not servidor:
+            return jsonify({"error": "Servidor no encontrado"}), 404
+        
+        usuarios = []
+        for miembro in servidor.members:
+            if not miembro.bot:  # Excluir bots
+                usuarios.append({
+                    "id": str(miembro.id),
+                    "nombre": miembro.name,
+                    "display_name": miembro.display_name,
+                    "avatar": str(miembro.avatar.url) if miembro.avatar else None
+                })
+        
+        return jsonify(usuarios)
+    
+    @app.route('/api/mensaje/avanzado', methods=['POST'])
+    def enviar_mensaje_avanzado():
+        """Envía mensaje con menciones a usuarios"""
+        import asyncio
+        
+        data = request.json
+        canal_id = data.get('canal_id')
+        mensaje = data.get('mensaje')
+        usuarios_ids = data.get('usuarios', [])  # Lista de IDs de usuarios a mencionar
+        
+        if not canal_id or not mensaje:
+            return jsonify({"error": "Faltan datos"}), 400
+        
+        try:
+            canal_id = int(canal_id)
+        except ValueError:
+            return jsonify({"error": "ID de canal inválido"}), 400
+        
+        bot = get_bot()
+        canal = bot.get_channel(canal_id)
+        
+        if not canal:
+            return jsonify({"error": "Canal no encontrado"}), 404
+        
+        # Construir mensaje con menciones
+        menciones = " ".join([f"<@{uid}>" for uid in usuarios_ids])
+        mensaje_final = f"{menciones} {mensaje}" if usuarios_ids else mensaje
+        
+        async def enviar():
+            await canal.send(mensaje_final)
+        
+        try:
+            future = asyncio.run_coroutine_threadsafe(enviar(), bot.loop)
+            future.result(timeout=5)
+            return jsonify({"success": True})
+        except Exception as e:
+            return jsonify({"error": str(e)}), 500

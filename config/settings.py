@@ -73,5 +73,6 @@ RESPUESTAS = {
         '`stop`': 'Detiene la reproducción y limpia la cola',
         '`nowplaying`': 'Muestra la canción que se está reproduciendo actualmente',
         '`volume`': '**<nivel>** - Ajusta el volumen (0-100)',
+        '`loop`': 'Activa/desactiva el modo de repetición para la canción actual',
     }
 }

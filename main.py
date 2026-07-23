@@ -23,7 +23,7 @@ def main():
     if not TOKEN:
         print("ERROR: No se encontró el TOKEN en las variables de entorno")
         return
-    
+
     print("🚀 Iniciando ChimBot...")
     bot.run(TOKEN)
 
